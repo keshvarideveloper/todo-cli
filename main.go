@@ -36,7 +36,6 @@ var (
 )
 
 func main() {
-
 	command = flag.String("command", "login-user", "command to run")
 	flag.Parse()
 
@@ -51,14 +50,23 @@ func main() {
 }
 
 func runCommand(command string) {
-
 	if command != "exit" && command != "register-user" && command != "login-user" && authenticatedUser == nil {
-		fmt.Println("Please first Log in ... ")
-		loginUser()
+		UserStorageLen := len(UserStorage)
+		switch {
+		case UserStorageLen == 0:
+			fmt.Println("You need to register ... ")
+			registerUser()
+			loginUser()
+		case UserStorageLen > 0:
+			fmt.Println("Please Log in ... ")
+			loginUser()
+		}
+
 		if authenticatedUser == nil {
 			return
 		}
 	}
+
 	switch command {
 	case "create-task":
 		createTask()
@@ -67,7 +75,6 @@ func runCommand(command string) {
 	case "register-user":
 		registerUser()
 	case "login-user":
-
 		loginUser()
 	case "exit":
 		os.Exit(0)
@@ -103,6 +110,7 @@ func createTask() {
 		isDone:     false,
 		CategoryID: categoryID,
 		DouDate:    dueDate,
+		UserID:     authenticatedUser.ID,
 	}
 	TaskStorage = append(TaskStorage, t)
 
@@ -120,9 +128,10 @@ func createCategory() {
 	color = scanner.Text()
 
 	c := Category{
-		ID:    len(CategoryStorage) + 1,
-		Title: title,
-		Color: color,
+		ID:     len(CategoryStorage) + 1,
+		Title:  title,
+		Color:  color,
+		UserID: authenticatedUser.ID,
 	}
 	CategoryStorage = append(CategoryStorage, c)
 
