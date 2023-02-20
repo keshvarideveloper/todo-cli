@@ -1,0 +1,47 @@
+
+Entities:
+    -User
+        Properties:
+            -id
+            -email
+            -password
+        Behaviors
+            -Register User
+            -Log in User
+
+    -Category
+        Properties:
+            -id
+            -title
+            -color
+
+        Behaviors
+            -Create a new Category
+            -List User's Categories
+            -Edit a Category
+
+    -Task
+        Properties:
+            -id
+            -title
+            -category
+            -isDone
+            -dueDate
+
+        Behaviors:
+            -Create a new Task
+            -List User today's Tasks
+            -List User's Tasks by date
+            -Change Task status (Done/Undone)
+            -Edit a Task
+
+User Story:
+    -User can create a new Category
+    -User can add a new Task
+    -User can see the list of categories
+    -User can see today's Tasks
+    -user can see the Tasks by date
+    -User can Done/Undone a Task
+    -User can edit a task
+    -User can edit a category
+
