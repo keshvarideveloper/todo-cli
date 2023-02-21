@@ -77,6 +77,8 @@ func runCommand(command string) {
 		registerUser()
 	case "login-user":
 		loginUser()
+	case "task-list":
+		taskList()
 	case "exit":
 		os.Exit(0)
 	default:
@@ -141,6 +143,15 @@ func createCategory() {
 	CategoryStorage = append(CategoryStorage, c)
 
 	fmt.Printf("New category added \n %+v\n", CategoryStorage)
+}
+func taskList() {
+	fmt.Println(text_color.Green + "Register process ..." + text_color.Reset)
+
+	for _, task := range TaskStorage {
+		if task.UserID == authenticatedUser.ID {
+			fmt.Println(task)
+		}
+	}
 }
 func registerUser() {
 	fmt.Println(text_color.Yellow + "Register process ..." + text_color.Reset)
