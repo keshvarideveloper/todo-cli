@@ -106,7 +106,19 @@ func createTask() {
 
 		return
 	}
+	isCategoryFind := false
+	for _, c := range CategoryStorage {
+		if c.UserID == categoryID && c.UserID == authenticatedUser.ID {
+			isCategoryFind = true
 
+			break
+		}
+	}
+	if isCategoryFind != true {
+		println("The category is not found")
+
+		return
+	}
 	fmt.Println("Enter task due date :")
 	scanner.Scan()
 	dueDate = scanner.Text()
@@ -180,6 +192,7 @@ func registerUser() {
 }
 func loginUser() {
 	fmt.Println(text_color.Cyan + "Login process ..." + text_color.Reset)
+	authenticatedUser = nil
 
 	var email, password string
 
@@ -191,13 +204,14 @@ func loginUser() {
 	scanner.Scan()
 	password = scanner.Text()
 
-	for _, user := range UserStorage {
+	for i, user := range UserStorage {
 		if user.Email == email && user.Password == password {
-			authenticatedUser = &user
+			authenticatedUser = &UserStorage[i]
 
 			break
 		}
 	}
+
 	if authenticatedUser == nil {
 		fmt.Println("The email or password is wrong")
 	} else {
