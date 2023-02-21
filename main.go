@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"todo-cli/color"
 )
 
 type User struct {
@@ -85,6 +86,8 @@ func runCommand(command string) {
 }
 
 func createTask() {
+	fmt.Println(color.Green + "Create a task process ..." + color.Reset)
+
 	var title, dueDate, category string
 
 	fmt.Println("Enter task title:")
@@ -117,6 +120,8 @@ func createTask() {
 	fmt.Printf("New task added \n %+v\n", TaskStorage)
 }
 func createCategory() {
+	fmt.Println(color.Purple + "Create a category process ..." + color.Reset)
+
 	var title, color string
 
 	fmt.Println("Enter category title:")
@@ -138,6 +143,8 @@ func createCategory() {
 	fmt.Printf("New category added \n %+v\n", CategoryStorage)
 }
 func registerUser() {
+	fmt.Println(color.Yellow + "Register process ..." + color.Reset)
+
 	var email, password string
 
 	fmt.Println("Enter your email address:")
@@ -159,6 +166,7 @@ func registerUser() {
 
 }
 func loginUser() {
+	fmt.Println(color.Cyan + "Login process ..." + color.Reset)
 
 	var email, password string
 
