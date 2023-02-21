@@ -103,6 +103,8 @@ func createTask() {
 	categoryID, err := strconv.Atoi(category)
 	if err != nil {
 		fmt.Printf("Category ID is not valid integer %v\n ", err)
+
+		return
 	}
 
 	fmt.Println("Enter task due date :")
