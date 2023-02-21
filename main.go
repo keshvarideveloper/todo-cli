@@ -33,11 +33,10 @@ var (
 	authenticatedUser *User
 
 	scanner = bufio.NewScanner(os.Stdin)
-	command *string
 )
 
 func main() {
-	command = flag.String("command", "login-user", "command to run")
+	command := flag.String("command", "login-user", "command to run")
 	flag.Parse()
 
 	for {
