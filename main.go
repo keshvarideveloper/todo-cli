@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"todo-cli/color"
+	"todo-cli/text_color"
 )
 
 type User struct {
@@ -63,6 +63,7 @@ func runCommand(command string) {
 		}
 
 		if authenticatedUser == nil {
+
 			return
 		}
 	}
@@ -85,7 +86,7 @@ func runCommand(command string) {
 }
 
 func createTask() {
-	fmt.Println(color.Green + "Create a task process ..." + color.Reset)
+	fmt.Println(text_color.Green + "Create a task process ..." + text_color.Reset)
 
 	var title, dueDate, category string
 
@@ -119,7 +120,7 @@ func createTask() {
 	fmt.Printf("New task added \n %+v\n", TaskStorage)
 }
 func createCategory() {
-	fmt.Println(color.Purple + "Create a category process ..." + color.Reset)
+	fmt.Println(text_color.Purple + "Create a category process ..." + text_color.Reset)
 
 	var title, color string
 
@@ -142,7 +143,7 @@ func createCategory() {
 	fmt.Printf("New category added \n %+v\n", CategoryStorage)
 }
 func registerUser() {
-	fmt.Println(color.Yellow + "Register process ..." + color.Reset)
+	fmt.Println(text_color.Yellow + "Register process ..." + text_color.Reset)
 
 	var email, password string
 
@@ -165,7 +166,7 @@ func registerUser() {
 
 }
 func loginUser() {
-	fmt.Println(color.Cyan + "Login process ..." + color.Reset)
+	fmt.Println(text_color.Cyan + "Login process ..." + text_color.Reset)
 
 	var email, password string
 
@@ -180,13 +181,13 @@ func loginUser() {
 	for _, user := range UserStorage {
 		if user.Email == email && user.Password == password {
 			authenticatedUser = &user
+
 			break
 		}
 	}
 	if authenticatedUser == nil {
 		fmt.Println("The email or password is wrong")
 	} else {
-
 		fmt.Printf("Welcome %s\n", authenticatedUser.Email)
 	}
 
