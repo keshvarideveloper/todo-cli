@@ -2,10 +2,13 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"todo-cli/text_color"
 )
 
@@ -33,11 +36,30 @@ var (
 	authenticatedUser *User
 
 	scanner = bufio.NewScanner(os.Stdin)
+
+	serializationMode string
+)
+
+const (
+	NormalSerializationMode = "normal"
+	JsonSerializationMode   = "json"
+	UserStorageFilePath     = "user.txt"
 )
 
 func main() {
+	serializeMode := flag.String("serialize-mode", JsonSerializationMode, "serializationmode to write data to file")
 	command := flag.String("command", "login-user", "command to run")
 	flag.Parse()
+
+	switch *serializeMode {
+	case NormalSerializationMode:
+		serializationMode = NormalSerializationMode
+	case JsonSerializationMode:
+		serializationMode = JsonSerializationMode
+	default:
+		return
+	}
+	loadUserStorageFromFile(serializationMode)
 
 	for {
 		runCommand(*command)
@@ -187,6 +209,8 @@ func registerUser() {
 	}
 	UserStorage = append(UserStorage, u)
 
+	writeUserToFile(u)
+
 	fmt.Printf("New user added \n %+v\n", UserStorage)
 
 }
@@ -218,4 +242,106 @@ func loginUser() {
 		fmt.Printf("Welcome %s\n", authenticatedUser.Email)
 	}
 
+}
+
+func writeUserToFile(user User) {
+	file, err := os.OpenFile(UserStorageFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("can't create or open the file")
+
+		return
+	}
+
+	var data []byte
+
+	switch serializationMode {
+	case NormalSerializationMode:
+		data = []byte(fmt.Sprintf("id: %d, email: %s, password: %s\n", user.ID, user.Email, user.Password))
+	case JsonSerializationMode:
+		var jErr error
+		data, jErr = json.Marshal(user)
+		if jErr != nil {
+			fmt.Println("can't marshal user struct to json", jErr)
+
+			return
+		}
+		data = append(data, '\n')
+	}
+
+	var wErr error
+	_, wErr = file.Write(data)
+	if wErr != nil {
+		fmt.Printf("can't write to the file %v\n", wErr)
+	}
+
+}
+
+func loadUserStorageFromFile(serializationMode string) {
+
+	dataStr, err := os.ReadFile(UserStorageFilePath)
+	if err != nil {
+		fmt.Printf("File << %s >> can't open %v", UserStorageFilePath, err)
+	}
+	userSlice := strings.Split(string(dataStr), "\n")
+
+	for _, userStr := range userSlice {
+		var userStruct User
+		switch serializationMode {
+		case JsonSerializationMode:
+			jErr := json.Unmarshal([]byte(userStr), &userStruct)
+			if jErr != nil {
+				fmt.Println("The record can't convert to user struct", jErr)
+
+				continue
+			}
+		case NormalSerializationMode:
+			var dErr error
+			userStruct, dErr = deserializeFromNormal(userStr)
+			if dErr != nil {
+				fmt.Println("The record can't convert to user struct", dErr)
+
+				continue
+			}
+		default:
+			fmt.Println("Serialization mode is not valid")
+
+			return
+		}
+
+		UserStorage = append(UserStorage, userStruct)
+	}
+}
+
+func deserializeFromNormal(userStr string) (User, error) {
+	if userStr == "" || strings.ContainsRune(userStr, '{') {
+		return User{}, errors.New("User string can't deserialize to normal")
+	}
+
+	var user User
+	userFields := strings.Split(userStr, ",")
+	for _, field := range userFields {
+		values := strings.Split(field, ": ")
+		if len(values) != 2 {
+			fmt.Println("Field is not valid, skipping...", len(values))
+
+			continue
+		}
+
+		fieldName := strings.ReplaceAll(values[0], " ", "")
+		fieldValue := values[1]
+		switch fieldName {
+		case "id":
+			id, err := strconv.Atoi(fieldValue)
+			if err != nil {
+				return User{}, errors.New("strconv error")
+			}
+			user.ID = id
+		case "email":
+			user.Email = fieldValue
+		case "password":
+			user.Password = fieldValue
+		}
+
+	}
+	return user, nil
 }
