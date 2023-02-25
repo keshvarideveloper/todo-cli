@@ -1,4 +1,4 @@
-package text_color
+package textcolor
 
 import "runtime"
 
