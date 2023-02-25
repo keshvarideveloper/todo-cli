@@ -2,6 +2,7 @@ package filestorage
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -9,29 +10,29 @@ import (
 	"todo-cli/entity"
 )
 
-type UserFileStorage struct {
+type UserStorage struct {
 	filePath          string
 	serializationMode string
 }
 
 var userStorageInMemory []entity.User
 
-func NewUserFileStorage(filePath, serializationMode string) *UserFileStorage {
-	return &UserFileStorage{
+func NewUserStorage(filePath, serializationMode string) *UserStorage {
+	return &UserStorage{
 		filePath:          filePath,
 		serializationMode: serializationMode,
 	}
 }
 
-func (f *UserFileStorage) Write(user entity.User) error {
-	file, err := os.OpenFile(f.filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+func (us *UserStorage) Write(user entity.User) error {
+	file, err := os.OpenFile(us.filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Println("can't create or open the file")
+		fmt.Println("can't create or open the file", us.filePath)
 
 		return err
 	}
 
-	err = f.loadUserToMemory()
+	err = us.loadUserToMemory()
 	if err != nil {
 
 		return err
@@ -42,7 +43,7 @@ func (f *UserFileStorage) Write(user entity.User) error {
 
 	var data []byte
 
-	switch f.serializationMode {
+	switch us.serializationMode {
 	case constance.NormalSerializationMode:
 		data = []byte(fmt.Sprintf("id: %d, email: %s, password: %s\n", user.ID, user.Email, user.Password))
 	case constance.JsonSerializationMode:
@@ -66,8 +67,8 @@ func (f *UserFileStorage) Write(user entity.User) error {
 
 	return nil
 }
-func (f *UserFileStorage) GetByEmail(email string) (entity.User, error) {
-	err := f.loadUserToMemory()
+func (us *UserStorage) GetByEmail(email string) (entity.User, error) {
+	err := us.loadUserToMemory()
 	if err != nil {
 
 		return entity.User{}, err
@@ -80,11 +81,11 @@ func (f *UserFileStorage) GetByEmail(email string) (entity.User, error) {
 		}
 	}
 
-	return entity.User{}, nil
+	return entity.User{}, errors.New("User not found")
 }
 
-func (f *UserFileStorage) List() ([]entity.User, error) {
-	err := f.loadUserToMemory()
+func (us *UserStorage) List() ([]entity.User, error) {
+	err := us.loadUserToMemory()
 	if err != nil {
 
 		return []entity.User{}, err
@@ -93,11 +94,10 @@ func (f *UserFileStorage) List() ([]entity.User, error) {
 	return userStorageInMemory, nil
 }
 
-func (f *UserFileStorage) loadUserToMemory() error {
-	dataStr, err := os.ReadFile(f.filePath)
-
+func (us *UserStorage) loadUserToMemory() error {
+	dataStr, err := os.ReadFile(us.filePath)
 	if err != nil {
-		fmt.Printf("File << %s >> can't open %v\n", f.filePath, err)
+		fmt.Printf("File << %s >> can't open %v\n", us.filePath, err)
 
 		return err
 	}
@@ -107,7 +107,7 @@ func (f *UserFileStorage) loadUserToMemory() error {
 	var userStorage []entity.User
 	for _, userStr := range userSlice {
 		var userStruct entity.User
-		switch f.serializationMode {
+		switch us.serializationMode {
 		case constance.JsonSerializationMode:
 			if userStr == "" {
 				continue
@@ -116,7 +116,6 @@ func (f *UserFileStorage) loadUserToMemory() error {
 			jErr := json.Unmarshal([]byte(userStr), &userStruct)
 
 			if jErr != nil {
-				fmt.Println("user", userStr)
 				fmt.Println("The record can't convert to user struct", jErr)
 
 				continue

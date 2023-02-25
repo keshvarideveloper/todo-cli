@@ -29,6 +29,8 @@ func DeserializeUserFromNormal(userStr string) (User, error) {
 
 		fieldName := strings.ReplaceAll(values[0], " ", "")
 		fieldValue := values[1]
+
+		fieldName = strings.ToLower(fieldName)
 		switch fieldName {
 		case "id":
 			id, err := strconv.Atoi(fieldValue)

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"todo-cli/constance"
 	"todo-cli/contract"
 	"todo-cli/entity"
@@ -13,20 +14,15 @@ import (
 )
 
 var (
-	//CategoryStorage []entity.Category
-	//TaskStorage     []entity.Task
-
-	authenticatedUser *entity.User
-
-	scanner = bufio.NewScanner(os.Stdin)
-
-	serializationMode string
+	authenticatedUser   *entity.User
+	scanner             = bufio.NewScanner(os.Stdin)
+	serializationMode   string
+	userFileStorage     *filestorage.UserStorage
+	categoryFileStorage *filestorage.CategoryStorage
+	taskFileStorage     *filestorage.TaskStorage
 )
 
-var userFileStorage *filestorage.UserFileStorage
-
 func main() {
-
 	serializeMode := flag.String("serialize-mode", constance.JsonSerializationMode, "serializationmode to write data to file")
 	command := flag.String("command", "login-user", "command to run")
 	flag.Parse()
@@ -40,7 +36,9 @@ func main() {
 		return
 	}
 
-	userFileStorage = filestorage.NewUserFileStorage("user.txt", serializationMode)
+	userFileStorage = filestorage.NewUserStorage("user.txt", serializationMode)
+	categoryFileStorage = filestorage.NewCategoryStorage("category.txt", serializationMode)
+	taskFileStorage = filestorage.NewTaskStorage("task.txt", serializationMode)
 
 	for {
 		runCommand(*command, userFileStorage)
@@ -73,18 +71,20 @@ func runCommand(command string, r contract.ReadUser) {
 	}
 
 	switch command {
-	//case "create-task":
-	//	createTask()
-	//case "create-category":
-	//	createCategory()
+	case "create-task":
+		createTask(taskFileStorage, categoryFileStorage)
+	case "create-category":
+		createCategory(categoryFileStorage)
 	case "register-user":
 		registerUser(userFileStorage)
 	case "login-user":
 		loginUser(userFileStorage)
 	case "list-user":
 		userList(userFileStorage)
-	//case "task-list":
-	//	taskList()
+	case "list-category":
+		categoryList(categoryFileStorage)
+	case "list-task":
+		taskList(taskFileStorage)
 	case "exit":
 		os.Exit(0)
 	default:
@@ -93,88 +93,97 @@ func runCommand(command string, r contract.ReadUser) {
 	}
 }
 
-//	func createTask() {
-//		fmt.Println(textcolor.Green + "Create a task process ..." + textcolor.Reset)
-//
-//		var title, dueDate, category string
-//
-//		fmt.Println("Enter task title:")
-//		scanner.Scan()
-//		title = scanner.Text()
-//
-//		fmt.Println("Enter task category ID:")
-//		scanner.Scan()
-//		category = scanner.Text()
-//
-//		categoryID, err := strconv.Atoi(category)
-//		if err != nil {
-//			fmt.Printf("Category ID is not valid integer %v\n ", err)
-//
-//			return
-//		}
-//		isCategoryFind := false
-//		for _, c := range CategoryStorage {
-//			if c.UserID == categoryID && c.UserID == authenticatedUser.ID {
-//				isCategoryFind = true
-//
-//				break
-//			}
-//		}
-//		if isCategoryFind != true {
-//			println("The category is not found")
-//
-//			return
-//		}
-//		fmt.Println("Enter task due date :")
-//		scanner.Scan()
-//		dueDate = scanner.Text()
-//
-//		t := Task{
-//			ID:         len(UserStorage) + 1,
-//			Title:      title,
-//			isDone:     false,
-//			CategoryID: categoryID,
-//			DouDate:    dueDate,
-//			UserID:     authenticatedUser.ID,
-//		}
-//		TaskStorage = append(TaskStorage, t)
-//
-//		fmt.Printf("New task added \n %+v\n", TaskStorage)
-//	}
-//
-//	func createCategory() {
-//		fmt.Println(textcolor.Purple + "Create a category process ..." + textcolor.Reset)
-//
-//		var title, color string
-//
-//		fmt.Println("Enter category title:")
-//		scanner.Scan()
-//		title = scanner.Text()
-//
-//		fmt.Println("Enter category color:")
-//		scanner.Scan()
-//		color = scanner.Text()
-//
-//		c := Category{
-//			ID:     len(CategoryStorage) + 1,
-//			Title:  title,
-//			Color:  color,
-//			UserID: authenticatedUser.ID,
-//		}
-//		CategoryStorage = append(CategoryStorage, c)
-//
-//		fmt.Printf("New category added \n %+v\n", CategoryStorage)
-//	}
-//
-//	func taskList() {
-//		fmt.Println(textcolor.Green + "Register process ..." + textcolor.Reset)
-//
-//		for _, task := range TaskStorage {
-//			if task.UserID == authenticatedUser.ID {
-//				fmt.Println(task)
-//			}
-//		}
-//	}
+func createTask(w contract.WriteTask, categoryStorage contract.ReadCategory) {
+	fmt.Println(textcolor.Green + "Create a task process ..." + textcolor.Reset)
+
+	var title, dueDate, category string
+
+	fmt.Println("Enter task title:")
+	scanner.Scan()
+	title = scanner.Text()
+
+	fmt.Println("Enter task category ID:")
+	scanner.Scan()
+	category = scanner.Text()
+
+	categoryID, err := strconv.Atoi(category)
+	if err != nil {
+		fmt.Printf("Category ID is not valid integer %v\n ", err)
+
+		return
+	}
+
+	categoryExist, err := categoryStorage.GetById(categoryID)
+	if err != nil {
+		fmt.Println("Category not found")
+
+		return
+	}
+
+	if categoryExist.UserID != authenticatedUser.ID {
+		fmt.Println("The category is not yours")
+
+		return
+	}
+
+	fmt.Println("Enter task due date :")
+	scanner.Scan()
+	dueDate = scanner.Text()
+
+	t := entity.Task{
+		Title:      title,
+		CategoryID: categoryID,
+		DouDate:    dueDate,
+		UserID:     authenticatedUser.ID,
+	}
+
+	err = w.Write(t)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+func createCategory(w contract.WriteCategory) {
+	fmt.Println(textcolor.Purple + "Create a category process ..." + textcolor.Reset)
+
+	var title, color string
+
+	fmt.Println("Enter category title:")
+	scanner.Scan()
+	title = scanner.Text()
+
+	fmt.Println("Enter category color:")
+	scanner.Scan()
+	color = scanner.Text()
+
+	c := entity.Category{
+		Title:  title,
+		Color:  color,
+		UserID: authenticatedUser.ID,
+	}
+
+	err := w.Write(c)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func taskList(r contract.ReadTask) {
+	fmt.Println(textcolor.Green + "Register process ..." + textcolor.Reset)
+
+	tasks, err := r.List()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	var userTasks []entity.Task
+	for _, task := range tasks {
+		if task.UserID == authenticatedUser.ID {
+			userTasks = append(userTasks, task)
+		}
+	}
+	fmt.Printf("Users list:\n %+v", userTasks)
+}
+
 func registerUser(w contract.WriteUser) {
 	fmt.Println(textcolor.Yellow + "Register process ..." + textcolor.Reset)
 
@@ -232,5 +241,20 @@ func userList(r contract.ReadUser) {
 		fmt.Println(err)
 	}
 
-	fmt.Printf("users list:\n %+v", users)
+	fmt.Printf("Users list:\n %+v\n", users)
+}
+
+func categoryList(r contract.ReadCategory) {
+	categories, err := r.List()
+	if err != nil {
+		fmt.Println(err)
+	}
+	var userCategories []entity.Category
+	for _, category := range categories {
+		if category.UserID == authenticatedUser.ID {
+			userCategories = append(userCategories, category)
+		}
+	}
+
+	fmt.Printf("Categories list:\n %+v\n", userCategories)
 }
